@@ -2,6 +2,13 @@
 # This module will read in the galfit best fit values and uncertainties
 #
 
+# Small edits to handle fixed parameters, especially in the sky parameter component:
+#   galfit header entry sometimes has format '[VALUE]' instead of 'RESULT +/- ERR'
+# SHP, 2015-12-05
+
+# Edit to read in galfit flags from header
+# SHP, 2016-02-10
+
 from astropy.io import fits
 
 class GalfitComponent(object):
@@ -21,6 +28,7 @@ class GalfitComponent(object):
         self.component_number = component_number
         headerkeys = [i for i in galfitheader.keys()]
         comp_params = []
+        component_flag = 0
         for i in headerkeys:
             if str(component_number) + '_' in i:
                 comp_params.append(i)
@@ -29,8 +37,34 @@ class GalfitComponent(object):
             #we know that val is a string formatted as 'result +/- uncertainty'
             val = val.split()
             paramsplit = param.split('_')
-            setattr(self,paramsplit[1].lower(),float(val[0]))
-            setattr(self,paramsplit[1].lower() + '_err',float(val[2]))
+            try:
+                if len(val) > 1:
+                    setattr(self,paramsplit[1].lower(),float(val[0]))
+                    setattr(self,paramsplit[1].lower() + '_err',float(val[2]))
+                else:
+                    # Fixed parameter: formatted as [value]
+                    val = val[0]
+                    val = val.split(']')[0].split('[')
+                    setattr(self,paramsplit[1].lower(),float(val[1]))
+                    setattr(self,paramsplit[1].lower() + '_err',float(0.))
+            except:
+                if len(val) > 1:
+                    val0 = val[0].split('*')
+                    val2 = val[2].split('*')
+                    setattr(self,paramsplit[1].lower(),float(val0[1]))
+                    setattr(self,paramsplit[1].lower() + '_err',float(val2[1]))
+                else:
+                    # Fixed parameter: formatted as [value]
+                    val = val[0]
+                    val = val.split(']')[0].split('[')
+                    val = val[1].split('*')
+                    setattr(self,paramsplit[1].lower(),float(val[1]))
+                    setattr(self,paramsplit[1].lower() + '_err',float(0.))
+                    
+                component_flag += 1
+        
+        setattr(self, 'flag', component_flag)
+        
             
 class GalfitResults(object):
     """
@@ -70,6 +104,9 @@ class GalfitResults(object):
         self.ndof = galfitheader["NDOF"]
         self.nfree = galfitheader["NFREE"]
         self.reduced_chisq = galfitheader["CHI2NU"]
+        
+        #read in galfit flags:
+        self.galfit_flags = galfitheader["FLAGS"].split(" ")
         
         #find the number of components
         num_components = 1 #already verified above
