@@ -62,6 +62,11 @@ class GalfitComponent(object):
                     setattr(self,paramsplit[1].lower() + '_err',float(0.))
                     
                 component_flag += 1
+                
+            # For case of ar: add a component renaming it to "q":
+            if paramsplit[1].lower() == 'ar':
+                setattr(self, 'q', self.__dict__[paramsplit[1].lower()])
+                setattr(self, 'q_err', self.__dict__[paramsplit[1].lower()+"_err"])
         
         setattr(self, 'flag', component_flag)
         
