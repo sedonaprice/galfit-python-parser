@@ -42,9 +42,12 @@ class GalfitComponent(object):
                     setattr(self,paramsplit[1].lower(),float(val[0]))
                     setattr(self,paramsplit[1].lower() + '_err',float(val[2]))
                 else:
-                    # Fixed parameter: formatted as [value]
+                    # Fixed parameter: formatted as [value] or relative so {value}
                     val = val[0]
-                    val = val.split(']')[0].split('[')
+                    if val[0] == '[':
+                        val = val.split(']')[0].split('[')
+                    elif val[0] == '{':
+                        val = val.split('}')[0].split('{')
                     setattr(self,paramsplit[1].lower(),float(val[1]))
                     setattr(self,paramsplit[1].lower() + '_err',float(0.))
             except:
