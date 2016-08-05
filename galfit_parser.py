@@ -23,14 +23,17 @@ class GalfitComponent(object):
         #checks
         assert component_number > 0
         assert "COMP_" + str(component_number) in galfitheader
-
+        
         self.component_type = galfitheader["COMP_" + str(component_number)]
         self.component_number = component_number
+        
         headerkeys = [i for i in galfitheader.keys()]
         comp_params = []
         component_flag = 0
         for i in headerkeys:
-            if str(component_number) + '_' in i:
+            # # Will match 11_ for 1_, etc:
+            #if str(component_number) + '_' in i:
+            if i.startswith(str(component_number)+'_'):
                 comp_params.append(i)
         for param in comp_params:
             val = galfitheader[param]
@@ -124,9 +127,9 @@ class GalfitResults(object):
             else:
                 break
         self.num_components = num_components
-
+        
         for i in range(1, self.num_components + 1):
             setattr(self,"component_" + str(i),GalfitComponent(galfitheader,i))
-
+            
         hdulist.close()
         
